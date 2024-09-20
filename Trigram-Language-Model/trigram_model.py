@@ -68,14 +68,8 @@ class TrigramModel(object):
 
 
     def count_ngrams(self, corpus):
-        """
-        COMPLETE THIS METHOD (PART 2)
-        Given a corpus iterator, populate dictionaries of unigram, bigram,
-        and trigram counts. 
-        """
 
         # count how many times each unigram, bigram, and trigram appears in the lexicon
-        # note self is model
         self.unigramcounts = {} # might want to use defaultdict or Counter instead
         self.bigramcounts = {} 
         self.trigramcounts = {} 
