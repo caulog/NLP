@@ -4,14 +4,17 @@ import math
 import random
 import os
 import os.path
+
 """
 COMS W4705 - Natural Language Processing - Fall 2024 
 Programming Homework 1 - Trigram Language Models
 Daniel Bauer
 """
 
-def corpus_reader(corpusfile, lexicon=None): 
-    with open(corpusfile,'r') as corpus: 
+def corpus_reader(corpusfile, lexicon=None):
+    # reads file and represents each sentence (each line) as a list of tokens
+    # to deal w unseen words/contexts replace w "UNK" token
+    with open(corpusfile,'r') as corpus:
         for line in corpus: 
             if line.strip():
                 sequence = line.lower().strip().split()
@@ -27,8 +30,6 @@ def get_lexicon(corpus):
             word_counts[word] += 1
     return set(word for word in word_counts if word_counts[word] > 1)  
 
-
-
 def get_ngrams(sequence, n):
     ngrams = []
 
@@ -38,8 +39,8 @@ def get_ngrams(sequence, n):
         return ngrams
 
     # add START and STOP to sequence
-    if n > 1: start = ['START'] * (n-1)
-    else: start = ['START']
+    start = ['START']
+    if n > 1: start *= (n-1)
     stop = ['STOP']
     sequence = start + sequence + stop
 
@@ -72,12 +73,26 @@ class TrigramModel(object):
         Given a corpus iterator, populate dictionaries of unigram, bigram,
         and trigram counts. 
         """
-   
+
+        # count how many times each unigram, bigram, and trigram appears in the lexicon
+        # note self is model
         self.unigramcounts = {} # might want to use defaultdict or Counter instead
         self.bigramcounts = {} 
         self.trigramcounts = {} 
 
-        ##Your code here
+        # for each line in the corpus file, create uni/bi/trigrams
+        for line in corpus:
+            unigram = get_ngrams(line, 1)
+            bigram = get_ngrams(line, 2)
+            trigram = get_ngrams(line, 3)
+
+            # for each uni/bi/trigram update counts
+            for gram in unigram:
+                self.unigramcounts[gram] = self.unigramcounts.get(gram, 0) + 1
+            for gram in bigram:
+                self.bigramcounts[gram] = self.bigramcounts.get(gram, 0) + 1
+            for gram in trigram:
+                self.trigramcounts[gram] = self.trigramcounts.get(gram, 0) + 1
 
         return
 
@@ -159,11 +174,10 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
 
 if __name__ == "__main__":
 
-    """ I COMMENTED THIS OUT """
-    """ model = TrigramModel(sys.argv[1]) """
+    model = TrigramModel(sys.argv[1])
 
     # Testing for get_ngrams
-    print(get_ngrams(["natural", "language", "processing"], 1))
+    print(get_ngrams(["natural", "language", "processing"], 3))
 
     # put test code here...
     # or run the script from the command line with 
