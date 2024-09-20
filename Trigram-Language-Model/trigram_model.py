@@ -4,6 +4,7 @@ import math
 import random
 import os
 import os.path
+from itertools import count
 
 """
 COMS W4705 - Natural Language Processing - Fall 2024 
@@ -40,7 +41,7 @@ def get_ngrams(sequence, n):
 
     # add START and STOP to sequence
     # don't count start
-    # start = ['START']
+    start = ['START']
     if n > 1: start *= (n-1)
     stop = ['STOP']
     sequence = start + sequence + stop
@@ -48,6 +49,9 @@ def get_ngrams(sequence, n):
     # create ngrams
     for i in range(len(sequence) - n+1):
         ngrams.append(tuple(sequence[i:i+n]))
+
+    # when testing w ungraded_test why do somewords get UNK... i guess i dont understand how that func works
+    # print(ngrams)
 
     return ngrams
 
@@ -101,24 +105,30 @@ class TrigramModel(object):
         """
 
         # p(w|u,v) = count(u,v,w)/count(u,v)
-
-        #print(trigram[0], trigram[1])
-        #print(self.bigramcounts.get((trigram[0], trigram[1]), 0))
-        count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
+        count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
+
+        if count_uv == 0:
+            return 0.0
+
+        #print(trigram, count_uvw)
+        #print(trigram[0], trigram[1], count_uv)
 
         return count_uvw/count_uv
-        #return 0.0
 
     def raw_bigram_probability(self, bigram):
         """
         COMPLETE THIS METHOD (PART 3)
         Returns the raw (unsmoothed) bigram probability
         """
-        count_u = self.unigramcounts.get((bigram[0]), 0)
+        count_u = self.unigramcounts.get((bigram[1]), 0)
         count_uv = self.bigramcounts.get((bigram[0], bigram[1]), 0)
 
-        return count_u/count_uv
+        print(bigram[1], count_u)
+        print(bigram[0], bigram[1], count_uv)
+
+        #return count_uv/count_u
+        return 0
     
     def raw_unigram_probability(self, unigram):
         """
@@ -193,7 +203,7 @@ if __name__ == "__main__":
     model = TrigramModel(sys.argv[1])
 
     # Testing for get_ngrams
-    print(get_ngrams(["natural", "language", "processing"], 3))
+    #print(get_ngrams(["natural", "language", "processing"], 3))
 
     # put test code here...
     # or run the script from the command line with 
