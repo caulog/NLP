@@ -1,0 +1,2 @@
+The dog bites the human and the dog bites the duck.
+The dog eats the duck and the duck bites the human.
