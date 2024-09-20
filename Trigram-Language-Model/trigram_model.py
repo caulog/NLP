@@ -30,11 +30,12 @@ def get_lexicon(corpus):
 
 
 def get_ngrams(sequence, n):
+    ngrams = []
 
-   # ensure n is greater than 0
+    # ensure n is greater than 0
     if n < 1:
         print("invalid n")
-        return[]
+        return ngrams
 
     # add START and STOP to sequence
     if n > 1: start = ['START'] * (n-1)
@@ -43,7 +44,6 @@ def get_ngrams(sequence, n):
     sequence = start + sequence + stop
 
     # create ngrams
-    ngrams = []
     for i in range(len(sequence) - n+1):
         ngrams.append(tuple(sequence[i:i+n]))
 
