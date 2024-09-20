@@ -30,13 +30,24 @@ def get_lexicon(corpus):
 
 
 def get_ngrams(sequence, n):
-    """
-    COMPLETE THIS FUNCTION (PART 1)
-    Given a sequence, this function should return a list of n-grams, where each n-gram is a Python tuple.
-    This should work for arbitrary values of n >= 1 
-    """
 
-    return []
+   # ensure n is greater than 0
+    if n < 1:
+        print("invalid n")
+        return[]
+
+    # add START and STOP to sequence
+    if n > 1: start = ['START'] * (n-1)
+    else: start = ['START']
+    stop = ['STOP']
+    sequence = start + sequence + stop
+
+    # create ngrams
+    ngrams = []
+    for i in range(len(sequence) - n+1):
+        ngrams.append(tuple(sequence[i:i+n]))
+
+    return ngrams
 
 
 class TrigramModel(object):
@@ -148,7 +159,11 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
 
 if __name__ == "__main__":
 
-    model = TrigramModel(sys.argv[1]) 
+    """ I COMMENTED THIS OUT """
+    """ model = TrigramModel(sys.argv[1]) """
+
+    # Testing for get_ngrams
+    print(get_ngrams(["natural", "language", "processing"], 1))
 
     # put test code here...
     # or run the script from the command line with 
