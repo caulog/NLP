@@ -81,28 +81,28 @@ class TrigramModel(object):
         self.total = {}
 
         # for each line in the corpus file, create uni/bi/trigrams
+        lines = 0
         for line in corpus:
             unigram = get_ngrams(line, 1)
             bigram = get_ngrams(line, 2)
             trigram = get_ngrams(line, 3)
+            lines += 1
 
             # for each uni/bi/trigram update counts
             for gram in unigram:
                 self.unigramcounts[gram] = self.unigramcounts.get(gram, 0) + 1
-                # should be number of words ... including words ?
                 self.total[0] = self.total.get(0,0) + 1
             for gram in bigram:
                 self.bigramcounts[gram] = self.bigramcounts.get(gram, 0) + 1
             for gram in trigram:
                 self.trigramcounts[gram] = self.trigramcounts.get(gram, 0) + 1
 
+        # store total number of words excluding START and STOP
+        self.total[0] = self.total.get(0, 0) - (lines * 2)
+
         return
 
     def raw_trigram_probability(self,trigram):
-        """
-        COMPLETE THIS METHOD (PART 3)
-        Returns the raw (unsmoothed) trigram probability
-        """
 
         # p(w|u,v) = count(u,v,w)/count(u,v)
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
@@ -111,39 +111,29 @@ class TrigramModel(object):
         if count_uv == 0:
             return 0.0
 
-        #print(trigram, count_uvw)
-        #print(trigram[0], trigram[1], count_uv)
-
         return count_uvw/count_uv
 
     def raw_bigram_probability(self, bigram):
-        """
-        COMPLETE THIS METHOD (PART 3)
-        Returns the raw (unsmoothed) bigram probability
-        """
-        count_u = self.unigramcounts.get((bigram[1]), 0)
+
+        # p(v|w) = count(u,v)/count(u)
         count_uv = self.bigramcounts.get((bigram[0], bigram[1]), 0)
+        count_u = self.unigramcounts.get((bigram[0],), 0)
 
-        print(bigram[1], count_u)
-        print(bigram[0], bigram[1], count_uv)
+        if count_u == 0:
+            return 0.0
 
-        #return count_uv/count_u
-        return 0
-    
+        return count_uv/count_u
+
     def raw_unigram_probability(self, unigram):
-        """
-        COMPLETE THIS METHOD (PART 3)
-        Returns the raw (unsmoothed) unigram probability.
-        """
 
+        # p(u) = count(u)/total
         total = self.total.get(0,0)
-        count_u = self.unigramcounts.get(unigram, 0)
+        count_u = self.unigramcounts.get((unigram[0],), 0)
+
+        if total == 0:
+            return 0.0
 
         return count_u/total
-
-        #hint: recomputing the denominator every time the method is called
-        # can be slow! You might want to compute the total number of words once, 
-        # store in the TrigramModel instance, and then re-use it.
 
     def generate_sentence(self,t=20): 
         """
