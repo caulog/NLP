@@ -97,10 +97,17 @@ class TrigramModel(object):
             for gram in trigram:
                 self.trigramcounts[gram] = self.trigramcounts.get(gram, 0) + 1
 
-        # store total number of words excluding START and STOP
-        self.total[0] = self.total.get(0, 0) - (lines * 2)
+        # store total number of words excluding START
+        self.total[0] = self.total.get(0, 0) - lines
+        print(self.total[0])
 
         return
+
+    """ 
+    PROBLEM HERE
+    I AM RETURNING ZERO 
+    --> BAD BC LOG PROBABILITY CANNOT BE CALCULATED THEN
+    """
 
     def raw_trigram_probability(self,trigram):
 
@@ -179,14 +186,39 @@ class TrigramModel(object):
         COMPLETE THIS METHOD (PART 5)
         Returns the log probability of an entire sequence.
         """
-        return float("-inf")
+        # Use the get_ngrams function to compute trigrams
+        trigrams = get_ngrams(sentence, 3)
+
+        # Use the smoothed_trigram_probability method to obtain probabilities
+        probability = 0
+        for trigram in trigrams:
+            trigram_prob = self.smoothed_trigram_probability(trigram)
+            print(trigram_prob)
+            # Convert each probability into logspace using math.log2
+            # Sum log probabilities
+            probability += math.log2(trigram_prob)
+
+        return probability
 
     def perplexity(self, corpus):
         """
         COMPLETE THIS METHOD (PART 6) 
         Returns the log probability of an entire sequence.
         """
-        return float("inf") 
+        # l = 1/M SUM(i = 1-> m)(log2 prob(sentence_i))
+        # M = number of tokens in test data, UNK, and STOP token but NOT START
+        # m = number of sentences in test data
+        sum = 0
+        for line in corpus:
+            #logprob = self.sentence_logprob(line)
+            #sum += logprob
+            '''sum += self.sentence_logprob(line)'''
+        l = -2
+        #l = sum / get_lexicon()
+        print(self.lexicon)
+
+        return math.pow(2, -l)
+        #return float("inf")
 
 
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
