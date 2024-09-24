@@ -108,6 +108,10 @@ class TrigramModel(object):
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
         count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
 
+        '''For testing'''
+        #print((trigram[0], trigram[1], trigram[2]), count_uvw)
+        #print((trigram[0], trigram[1]), count_uv)
+
         if count_uv == 0:
             return 0.0
 
@@ -115,9 +119,13 @@ class TrigramModel(object):
 
     def raw_bigram_probability(self, bigram):
 
-        # p(v|w) = count(u,v)/count(u)
+        # p(v|u) = count(u,v)/count(u)
         count_uv = self.bigramcounts.get((bigram[0], bigram[1]), 0)
         count_u = self.unigramcounts.get((bigram[0],), 0)
+
+        '''For testing'''
+        #print((bigram[0], bigram[1]), count_uv)
+        #print((bigram[0],), count_u)
 
         if count_u == 0:
             return 0.0
@@ -130,6 +138,10 @@ class TrigramModel(object):
         total = self.total.get(0,0)
         count_u = self.unigramcounts.get((unigram[0],), 0)
 
+        '''For testing'''
+        #print(total)
+        #print(unigram, count_u)
+
         if total == 0:
             return 0.0
 
@@ -141,19 +153,26 @@ class TrigramModel(object):
         Generate a random sentence from the trigram model. t specifies the
         max length, but the sentence may be shorter if STOP is reached.
         """
+
         return result            
 
     def smoothed_trigram_probability(self, trigram):
-        """
-        COMPLETE THIS METHOD (PART 4)
-        Returns the smoothed trigram probability (using linear interpolation). 
-        """
-
         # only matters here because uni and bigram taken care of w UNK tokens
         lambda1 = 1/3.0
         lambda2 = 1/3.0
         lambda3 = 1/3.0
-        return 0.0
+
+        # p(w|u,v) = lambda1 * p_mle(w|u,v) + lambda2 * p_mle(w|v) + lambda3 + p_mle(w)
+        lambda_uvw = lambda1 * self.raw_trigram_probability((trigram[0], trigram[1], trigram[2]))
+        lambda_vw = lambda2 * self.raw_bigram_probability((trigram[1], trigram[2]))
+        lambda_w = lambda3 * self.raw_unigram_probability((trigram[2],))
+
+        ''' For testing'''
+        #print((trigram[0], trigram[1], trigram[2]), lambda_uvw, '\n')
+        #print((trigram[1], trigram[2]), lambda_vw, '\n')
+        #print((trigram[2],), lambda_w, '\n')
+
+        return lambda_uvw + lambda_vw + lambda_w
         
     def sentence_logprob(self, sentence):
         """
