@@ -24,12 +24,14 @@ def corpus_reader(corpusfile, lexicon=None):
                 else: 
                     yield sequence
 
+
 def get_lexicon(corpus):
     word_counts = defaultdict(int)
     for sentence in corpus:
         for word in sentence: 
             word_counts[word] += 1
     return set(word for word in word_counts if word_counts[word] > 1)  
+
 
 def get_ngrams(sequence, n):
     ngrams = []
@@ -48,9 +50,6 @@ def get_ngrams(sequence, n):
     # create ngrams
     for i in range(len(sequence) - n+1):
         ngrams.append(tuple(sequence[i:i+n]))
-
-    # when testing w ungraded_test why do somewords get UNK... i guess i dont understand how that func works
-    # print(ngrams)
 
     return ngrams
 
@@ -83,6 +82,7 @@ class TrigramModel(object):
         # for each line in the corpus file
         lines = 0
         for line in corpus:
+
             # get unigrams then update dictionary counts and total tokens
             unigrams = get_ngrams(line, 1)
             for ngram in unigrams:
@@ -108,13 +108,14 @@ class TrigramModel(object):
 
         return
 
+
     def raw_trigram_probability(self,trigram):
 
         # p(w|u,v) = count(u,v,w)/count(u,v)
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
         count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
 
-        # for ['START', 'START', 'TOKEN'] trigrams
+        # for ['START', 'START', 'TOKEN'] trigrams b/c ['START', 'START'] bigrams don't exist
         if (trigram[0] == 'START') & (trigram[1] == 'START'):
             count_uv = self.lines[0]
 
@@ -122,11 +123,8 @@ class TrigramModel(object):
         if count_uv == 0:
             return 1/(len(self.unigramcounts) - 1)
 
-        '''For testing'''
-        #print((trigram[0], trigram[1], trigram[2]), count_uvw)
-        #print((trigram[0], trigram[1]), count_uv)
-
         return count_uvw/count_uv
+
 
     def raw_bigram_probability(self, bigram):
 
@@ -138,23 +136,17 @@ class TrigramModel(object):
         if count_u == 0:
             return 1/(len(self.unigramcounts) - 1)
 
-        '''For testing'''
-        #print((bigram[0], bigram[1]), count_uv)
-        #print((bigram[0],), count_u)
-
         return count_uv/count_u
+
 
     def raw_unigram_probability(self, unigram):
 
-        # p(u) = count(u)/total
+        # p(u) = count(u)/total(i.e. total tokens excluding start)
         total = self.total.get(0,0)
         count_u = self.unigramcounts.get((unigram[0],), 0)
 
-        '''For testing'''
-        #print(total)
-        #print(unigram, count_u)
-
         return count_u/total
+
 
     def generate_sentence(self,t=20): 
         """
@@ -162,10 +154,11 @@ class TrigramModel(object):
         Generate a random sentence from the trigram model. t specifies the
         max length, but the sentence may be shorter if STOP is reached.
         """
-
         return result            
 
+
     def smoothed_trigram_probability(self, trigram):
+
         # only matters here because uni and bigram taken care of w UNK tokens
         lambda1 = 1/3.0
         lambda2 = 1/3.0
@@ -176,48 +169,36 @@ class TrigramModel(object):
         lambda_vw = lambda2 * self.raw_bigram_probability((trigram[1], trigram[2]))
         lambda_w = lambda3 * self.raw_unigram_probability((trigram[2],))
 
-        ''' For testing'''
-        #print((trigram[0], trigram[1], trigram[2]), lambda_uvw, '\n')
-        #print((trigram[1], trigram[2]), lambda_vw, '\n')
-        #print((trigram[2],), lambda_w, '\n')
-
         return lambda_uvw + lambda_vw + lambda_w
-        
+
+
     def sentence_logprob(self, sentence):
-        """
-        COMPLETE THIS METHOD (PART 5)
-        Returns the log probability of an entire sequence.
-        """
+
         # Use the get_ngrams function to compute trigrams
         trigrams = get_ngrams(sentence, 3)
 
         # Use the smoothed_trigram_probability method to obtain probabilities
+        # Sum each probability converted into logspace using math.log2
         probability = 0
         for ngram in trigrams:
             ngram_prob = self.smoothed_trigram_probability(ngram)
-            # Convert each probability into logspace using math.log2
-            # Sum log probabilities
             probability += math.log2(ngram_prob)
 
         return probability
 
-    def perplexity(self, corpus):
-        """
-          COMPLETE THIS METHOD (PART 6)
-          Returns the log probability of an entire sequence.
-          """
-        # l = 1/M SUM(i = 1-> m)(log2 prob(sentence_i))
-        # m = number of sentences in test data
-        # perplexity = sum the log probability for each sentence
-        # and then divide by the total number of words tokens in the test file.
-        # M = the total number of word tokens in the test file
 
+    def perplexity(self, corpus):
+
+        # Perplexity = 2^(-l)
+        # l = 1/M SUM(i = 1-> m)(log2 prob(sentence_i))
+        # M = the total number of word tokens in the test file
         M = 0
+        # m = number of sentences in test data
         m_sum = 0
+
         for line in corpus:
             M += len(line)
-            logP = self.sentence_logprob(line)
-            m_sum += logP
+            m_sum += self.sentence_logprob(line)
 
         l = (1 / M) * m_sum
 
@@ -225,6 +206,7 @@ class TrigramModel(object):
 
 
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
+
         # Create two trigram models
         # high scoring
         model1 = TrigramModel(training_file1)
@@ -234,15 +216,9 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
         total = 0
         correct = 0       
 
-        # We compute the perplexity of each language model on each essay.
-
+        # Compute the perplexity of each language model on each essay.
         # The model with the lower perplexity determines the class of the essay.
 
-
-        # All you have to do is compare the perplexities and the returns
-        # the accuracy (correct predictions / total predictions).
-
-        # reads in the test essays from each directory
         # Find high scores
         for f in os.listdir(testdir1):
             total += 1
@@ -258,8 +234,9 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
             pp_high = model1.perplexity(corpus_reader(os.path.join(testdir2, f), model1.lexicon))
             if (pp_high > pp_low):
                 correct += 1
-        
-        return (correct/total)*100
+
+        # Accuracy = (correct predictions / total predictions)
+        return (correct/total)
 
 if __name__ == "__main__":
 
