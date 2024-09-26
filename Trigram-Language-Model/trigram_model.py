@@ -40,7 +40,6 @@ def get_ngrams(sequence, n):
         return ngrams
 
     # add START and STOP to sequence
-    # don't count start
     start = ['START']
     if n > 1: start *= (n-1)
     stop = ['STOP']
@@ -79,35 +78,35 @@ class TrigramModel(object):
         self.bigramcounts = {} 
         self.trigramcounts = {}
         self.total = {}
+        self.lines = {}
 
-        # for each line in the corpus file, create uni/bi/trigrams
+        # for each line in the corpus file
         lines = 0
         for line in corpus:
-            unigram = get_ngrams(line, 1)
-            bigram = get_ngrams(line, 2)
-            trigram = get_ngrams(line, 3)
+            # get unigrams then update dictionary counts and total tokens
+            unigrams = get_ngrams(line, 1)
+            for ngram in unigrams:
+                self.unigramcounts[ngram] = self.unigramcounts.get(ngram, 0) + 1
+                self.total[0] = self.total.get(0,0) + 1
+
+            # get bigrams then update dictionary counts
+            bigrams = get_ngrams(line, 2)
+            for ngram in bigrams:
+                self.bigramcounts[ngram] = self.bigramcounts.get(ngram, 0) + 1
+
+            # get trigrams then update dictionary counts
+            trigrams = get_ngrams(line, 3)
+            for ngram in trigrams:
+                self.trigramcounts[ngram] = self.trigramcounts.get(ngram, 0) + 1
+
+            # count number of lines for START
             lines += 1
 
-            # for each uni/bi/trigram update counts
-            for gram in unigram:
-                self.unigramcounts[gram] = self.unigramcounts.get(gram, 0) + 1
-                self.total[0] = self.total.get(0,0) + 1
-            for gram in bigram:
-                self.bigramcounts[gram] = self.bigramcounts.get(gram, 0) + 1
-            for gram in trigram:
-                self.trigramcounts[gram] = self.trigramcounts.get(gram, 0) + 1
-
-        # store total number of words excluding START
+        # store total number of TOKENS excluding START and total number of lines in corpus
         self.total[0] = self.total.get(0, 0) - lines
-        print(self.total[0])
+        self.lines[0] = lines
 
         return
-
-    """ 
-    PROBLEM HERE
-    I AM RETURNING ZERO 
-    --> BAD BC LOG PROBABILITY CANNOT BE CALCULATED THEN
-    """
 
     def raw_trigram_probability(self,trigram):
 
@@ -115,12 +114,17 @@ class TrigramModel(object):
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
         count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
 
+        # for ['START', 'START', 'TOKEN'] trigrams
+        if (trigram[0] == 'START') & (trigram[1] == 'START'):
+            count_uv = self.lines[0]
+
+        # for unseen context P = (1/V)
+        if count_uv == 0:
+            return 1/(len(self.unigramcounts) - 1)
+
         '''For testing'''
         #print((trigram[0], trigram[1], trigram[2]), count_uvw)
         #print((trigram[0], trigram[1]), count_uv)
-
-        if count_uv == 0:
-            return 0.0
 
         return count_uvw/count_uv
 
@@ -130,12 +134,13 @@ class TrigramModel(object):
         count_uv = self.bigramcounts.get((bigram[0], bigram[1]), 0)
         count_u = self.unigramcounts.get((bigram[0],), 0)
 
+        # for unseen context P = (1/V)
+        if count_u == 0:
+            return 1/(len(self.unigramcounts) - 1)
+
         '''For testing'''
         #print((bigram[0], bigram[1]), count_uv)
         #print((bigram[0],), count_u)
-
-        if count_u == 0:
-            return 0.0
 
         return count_uv/count_u
 
@@ -148,9 +153,6 @@ class TrigramModel(object):
         '''For testing'''
         #print(total)
         #print(unigram, count_u)
-
-        if total == 0:
-            return 0.0
 
         return count_u/total
 
@@ -191,12 +193,11 @@ class TrigramModel(object):
 
         # Use the smoothed_trigram_probability method to obtain probabilities
         probability = 0
-        for trigram in trigrams:
-            trigram_prob = self.smoothed_trigram_probability(trigram)
-            print(trigram_prob)
+        for ngram in trigrams:
+            ngram_prob = self.smoothed_trigram_probability(ngram)
             # Convert each probability into logspace using math.log2
             # Sum log probabilities
-            probability += math.log2(trigram_prob)
+            probability += math.log2(ngram_prob)
 
         return probability
 
@@ -206,19 +207,18 @@ class TrigramModel(object):
         Returns the log probability of an entire sequence.
         """
         # l = 1/M SUM(i = 1-> m)(log2 prob(sentence_i))
-        # M = number of tokens in test data, UNK, and STOP token but NOT START
         # m = number of sentences in test data
+
+        M = (len(self.unigramcounts) - 1) # M = number of tokens in test data, UNK, and STOP token but NOT START
+
         sum = 0
         for line in corpus:
-            #logprob = self.sentence_logprob(line)
-            #sum += logprob
-            '''sum += self.sentence_logprob(line)'''
-        l = -2
-        #l = sum / get_lexicon()
-        print(self.lexicon)
+            logP = self.sentence_logprob(line)
+            sum += logP
+
+        l = (1/M) * sum
 
         return math.pow(2, -l)
-        #return float("inf")
 
 
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
