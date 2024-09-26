@@ -203,41 +203,63 @@ class TrigramModel(object):
 
     def perplexity(self, corpus):
         """
-        COMPLETE THIS METHOD (PART 6) 
-        Returns the log probability of an entire sequence.
-        """
+          COMPLETE THIS METHOD (PART 6)
+          Returns the log probability of an entire sequence.
+          """
         # l = 1/M SUM(i = 1-> m)(log2 prob(sentence_i))
         # m = number of sentences in test data
+        # perplexity = sum the log probability for each sentence
+        # and then divide by the total number of words tokens in the test file.
+        # M = the total number of word tokens in the test file
 
-        M = (len(self.unigramcounts) - 1) # M = number of tokens in test data, UNK, and STOP token but NOT START
-
-        sum = 0
+        M = 0
+        m_sum = 0
         for line in corpus:
+            M += len(line)
             logP = self.sentence_logprob(line)
-            sum += logP
+            m_sum += logP
 
-        l = (1/M) * sum
+        l = (1 / M) * m_sum
 
         return math.pow(2, -l)
 
 
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
-
+        # Create two trigram models
+        # high scoring
         model1 = TrigramModel(training_file1)
+        # low scoring
         model2 = TrigramModel(training_file2)
 
         total = 0
         correct = 0       
- 
+
+        # We compute the perplexity of each language model on each essay.
+
+        # The model with the lower perplexity determines the class of the essay.
+
+
+        # All you have to do is compare the perplexities and the returns
+        # the accuracy (correct predictions / total predictions).
+
+        # reads in the test essays from each directory
+        # Find high scores
         for f in os.listdir(testdir1):
-            pp = model1.perplexity(corpus_reader(os.path.join(testdir1, f), model1.lexicon))
-            # .. 
-    
+            total += 1
+            pp_high = model1.perplexity(corpus_reader(os.path.join(testdir1, f), model1.lexicon))
+            pp_low = model2.perplexity(corpus_reader(os.path.join(testdir1, f), model2.lexicon))
+            if (pp_high < pp_low):
+                correct += 1
+
+        # Find low scores
         for f in os.listdir(testdir2):
-            pp = model2.perplexity(corpus_reader(os.path.join(testdir2, f), model2.lexicon))
-            # .. 
+            total += 1
+            pp_low = model2.perplexity(corpus_reader(os.path.join(testdir2, f), model2.lexicon))
+            pp_high = model1.perplexity(corpus_reader(os.path.join(testdir2, f), model1.lexicon))
+            if (pp_high > pp_low):
+                correct += 1
         
-        return 0.0
+        return (correct/total)*100
 
 if __name__ == "__main__":
 
@@ -261,7 +283,7 @@ if __name__ == "__main__":
     # print(pp)
 
 
-    # Essay scoring experiment: 
+    # Essay scoring experiment:
     # acc = essay_scoring_experiment('train_high.txt', 'train_low.txt", "test_high", "test_low")
     # print(acc)
 
