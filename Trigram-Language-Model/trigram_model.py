@@ -36,18 +36,18 @@ def get_lexicon(corpus):
 def get_ngrams(sequence, n):
     ngrams = []
 
-    # ensure n is greater than 0
+    # Ensure n is greater than 0
     if n < 1:
         print("invalid n")
         return ngrams
 
-    # add START and STOP to sequence
+    # Add START and STOP to sequence
     start = ['START']
     if n > 1: start *= (n-1)
     stop = ['STOP']
     sequence = start + sequence + stop
 
-    # create ngrams
+    # Create ngrams
     for i in range(len(sequence) - n+1):
         ngrams.append(tuple(sequence[i:i+n]))
 
@@ -72,7 +72,7 @@ class TrigramModel(object):
 
     def count_ngrams(self, corpus):
 
-        # count how many times each unigram, bigram, and trigram appears in the lexicon
+        # Count how many times each unigram, bigram, and trigram appears in the lexicon
         self.unigramcounts = {} # might want to use defaultdict or Counter instead
         self.bigramcounts = {} 
         self.trigramcounts = {}
@@ -83,26 +83,26 @@ class TrigramModel(object):
         lines = 0
         for line in corpus:
 
-            # get unigrams then update dictionary counts and total tokens
+            # Get unigrams then update dictionary counts and total tokens
             unigrams = get_ngrams(line, 1)
             for ngram in unigrams:
                 self.unigramcounts[ngram] = self.unigramcounts.get(ngram, 0) + 1
                 self.total[0] = self.total.get(0,0) + 1
 
-            # get bigrams then update dictionary counts
+            # Get bigrams then update dictionary counts
             bigrams = get_ngrams(line, 2)
             for ngram in bigrams:
                 self.bigramcounts[ngram] = self.bigramcounts.get(ngram, 0) + 1
 
-            # get trigrams then update dictionary counts
+            # Get trigrams then update dictionary counts
             trigrams = get_ngrams(line, 3)
             for ngram in trigrams:
                 self.trigramcounts[ngram] = self.trigramcounts.get(ngram, 0) + 1
 
-            # count number of lines for START
+            # Count number of lines for START
             lines += 1
 
-        # store total number of TOKENS excluding START and total number of lines in corpus
+        # Store total number of TOKENS excluding START and total number of lines in corpus
         self.total[0] = self.total.get(0, 0) - lines
         self.lines[0] = lines
 
@@ -115,11 +115,11 @@ class TrigramModel(object):
         count_uvw = self.trigramcounts.get((trigram[0], trigram[1], trigram[2]), 0)
         count_uv = self.bigramcounts.get((trigram[0], trigram[1]), 0)
 
-        # for ['START', 'START', 'TOKEN'] trigrams b/c ['START', 'START'] bigrams don't exist
+        # For ['START', 'START', 'TOKEN'] trigrams b/c ['START', 'START'] bigrams don't exist
         if (trigram[0] == 'START') & (trigram[1] == 'START'):
             count_uv = self.lines[0]
 
-        # for unseen context P = (1/V)
+        # For unseen context P = (1/V)
         if count_uv == 0:
             return 1/(len(self.unigramcounts) - 1)
 
@@ -132,7 +132,7 @@ class TrigramModel(object):
         count_uv = self.bigramcounts.get((bigram[0], bigram[1]), 0)
         count_u = self.unigramcounts.get((bigram[0],), 0)
 
-        # for unseen context P = (1/V)
+        # For unseen context P = (1/V)
         if count_u == 0:
             return 1/(len(self.unigramcounts) - 1)
 
@@ -159,7 +159,7 @@ class TrigramModel(object):
 
     def smoothed_trigram_probability(self, trigram):
 
-        # only matters here because uni and bigram taken care of w UNK tokens
+        # Only matters here because uni and bigram taken care of w UNK tokens
         lambda1 = 1/3.0
         lambda2 = 1/3.0
         lambda3 = 1/3.0
@@ -208,9 +208,9 @@ class TrigramModel(object):
 def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2):
 
         # Create two trigram models
-        # high scoring
+        # High scoring
         model1 = TrigramModel(training_file1)
-        # low scoring
+        # Low scoring
         model2 = TrigramModel(training_file2)
 
         total = 0
@@ -224,19 +224,20 @@ def essay_scoring_experiment(training_file1, training_file2, testdir1, testdir2)
             total += 1
             pp_high = model1.perplexity(corpus_reader(os.path.join(testdir1, f), model1.lexicon))
             pp_low = model2.perplexity(corpus_reader(os.path.join(testdir1, f), model2.lexicon))
-            if (pp_high < pp_low):
+            if pp_high < pp_low:
                 correct += 1
 
         # Find low scores
         for f in os.listdir(testdir2):
             total += 1
-            pp_low = model2.perplexity(corpus_reader(os.path.join(testdir2, f), model2.lexicon))
             pp_high = model1.perplexity(corpus_reader(os.path.join(testdir2, f), model1.lexicon))
-            if (pp_high > pp_low):
+            pp_low = model2.perplexity(corpus_reader(os.path.join(testdir2, f), model2.lexicon))
+            if pp_high > pp_low:
                 correct += 1
 
         # Accuracy = (correct predictions / total predictions)
-        return (correct/total)
+        return correct/total
+
 
 if __name__ == "__main__":
 
