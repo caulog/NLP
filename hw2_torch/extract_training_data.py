@@ -154,10 +154,10 @@ class FeatureExtractor(object):
                 else:
                     word = words[input_rep[i]]
                     '''Not entirely sure if I took care of 'None' correctly'''
-                    # If the word is NOT None, make it lowercase and get word index from vocab
+                    # If the word is NOT None, make it lowercase
                     if word is not None:
                         word.lower()
-                        # Replace input_rep with the corresponding word index unless the word is unkown
+                        # Replace input_rep with word index from vocab unless the word is unknown
                         if word in self.word_vocab:
                             input_rep[i] = self.word_vocab[word]
                         else:
@@ -169,9 +169,14 @@ class FeatureExtractor(object):
         # return a 1-D numpy array of length 6
         return input_rep
 
-    def get_output_representation(self, output_pair):  
-        # TODO: Write this method for Part 2
-        return np.zeros(91)
+    def get_output_representation(self, output_pair):
+        # 45*2+1 = 91 possible outputs
+        # 45 POS tags
+        # 2 transitions (left or right arc)
+        # 1 transition without POS tag (shift)
+        output_rep = np.zeros(91)
+        output_rep[self.output_labels[output_pair]] = 1
+        return output_rep
 
      
     
