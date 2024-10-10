@@ -1,8 +1,12 @@
+from idlelib.searchengine import search_reverse
+
+from sympy.codegen.cnodes import sizeof
+
 from conll_reader import DependencyStructure, conll_reader
 from collections import defaultdict
 import copy
 import sys
-import keras
+#import keras
 import numpy as np
 
 class State(object):
@@ -115,8 +119,55 @@ class FeatureExtractor(object):
         return vocab     
 
     def get_input_representation(self, words, pos, state):
-        # TODO: Write this method for Part 2
-        return np.zeros(6)
+        # Initialize input_rep to null
+        null_index = self.word_vocab['<NULL>']
+        stack1, stack2, stack3, buffer1, buffer2, buffer3 = null_index, null_index, null_index, null_index, null_index, null_index
+
+        # If possible, get first 3 words on stack
+        stack_size = len(state.stack)
+        if stack_size > 0: stack1 = state.stack[-1]
+        if stack_size > 1: stack2 = state.stack[-2]
+        if stack_size > 2: stack3 = state.stack[-3]
+
+        # If possible, get first 3 words on buffer
+        buffer_size = len(state.buffer)
+        if buffer_size > 0: buffer1 = state.buffer[-1]
+        if buffer_size > 1: buffer2 = state.buffer[-2]
+        if buffer_size > 2: buffer3 = state.buffer[-3]
+
+        input_rep = np.array([stack1, stack2, stack3, buffer1, buffer2, buffer3])
+
+        # For each index in input_rep
+        for i in range(len(input_rep)):
+            # If the index is not NULL, get POS tag
+            if input_rep[i] != null_index:
+                pos_tag = pos[input_rep[i]]
+
+                # If the POS tag is a special symbol (CD = number, NNP = proper name)
+                # Then replace with corresponding symbol index
+                if pos_tag == 'CD':
+                    input_rep[i] = self.word_vocab['<CD>']
+                elif pos_tag == 'NNP':
+                    input_rep[i] = self.word_vocab['<NNP>']
+
+                # Else, get the word at the index from the sequence
+                else:
+                    word = words[input_rep[i]]
+                    '''Not entirely sure if I took care of 'None' correctly'''
+                    # If the word is NOT None, make it lowercase and get word index from vocab
+                    if word is not None:
+                        word.lower()
+                        # Replace input_rep with the corresponding word index unless the word is unkown
+                        if word in self.word_vocab:
+                            input_rep[i] = self.word_vocab[word]
+                        else:
+                            input_rep[i] = self.word_vocab['<UNK>']
+                    # if the word IS None, replace input_rep with the corresponding root index
+                    else:
+                        input_rep[i] = self.word_vocab['<ROOT>']
+
+        # return a 1-D numpy array of length 6
+        return input_rep
 
     def get_output_representation(self, output_pair):  
         # TODO: Write this method for Part 2
