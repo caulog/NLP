@@ -10,13 +10,17 @@ from extract_training_data import FeatureExtractor
 
 class DependencyDataset(Dataset):
 
+  # Instantiates the DependencyDataset class and loads the data from the
+  # target_train.npy and input_train.npy files from part 2
   def __init__(self, inputs_filename, output_filename):
     self.inputs = np.load(input_filename)
     self.outputs = np.load(output_filename)
 
+  # Returns the total number of input/target pairs in the dataset
   def __len__(self): 
     return self.inputs.shape[0]
 
+  # Returns the input/target pair with index k
   def __getitem__(self, k): 
     return (self.inputs[k], self.outputs[k])
 
@@ -26,8 +30,16 @@ class DependencyModel(Module):
   def __init__(self, word_types, outputs):
     super(DependencyModel, self).__init__()
     # TODO: complete for part 3
+    # Embedding layer with
+    # num_embeddings = number of word_types: size of the dictionary of embeddings
+    # embedding_dim = 128: size of each embedding vector
+    self.embedding_layer = torch.nn.Embedding(len(word_types), 128)
+    self.hidden_layer = torch.nn.Linear(128, 128)
+    self.output_layer = torch.nn.Linear(128, 91)
 
   def forward(self, inputs):
+    embedded = self.embedding_layer(inputs).view(len(inputs), 786)
+    hidden_tensor = self.hidden_layer(embedded)
 
     # TODO: complete for part 3
     return torch.zeros(inputs.shape(0), 91)  # replace this line
