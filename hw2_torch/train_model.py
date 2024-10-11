@@ -12,7 +12,8 @@ class DependencyDataset(Dataset):
 
   # Instantiates the DependencyDataset class and loads the data from the
   # target_train.npy and input_train.npy files from part 2
-  def __init__(self, inputs_filename, output_filename):
+  '''There was an error here ... originally "inputs_filename" in parameter and used input_filename as variable??'''
+  def __init__(self, input_filename, output_filename):
     self.inputs = np.load(input_filename)
     self.outputs = np.load(output_filename)
 
@@ -33,21 +34,24 @@ class DependencyModel(Module):
     # Embedding layer with
     # num_embeddings = number of word_types: size of the dictionary of embeddings
     # embedding_dim = 128: size of each embedding vector
-    self.embedding_layer = torch.nn.Embedding(len(word_types), 128)
+    #print(word_types)
+    self.embedding_layer = torch.nn.Embedding(word_types, 128)
     self.hidden_layer = torch.nn.Linear(128, 128)
     self.output_layer = torch.nn.Linear(128, 91)
 
   def forward(self, inputs):
-    embedded = self.embedding_layer(inputs).view(len(inputs), 786)
-    hidden_tensor = self.hidden_layer(embedded)
-
+    embedding_tensor= self.embedding_layer(inputs).view(len(inputs), 786)
+    hidden_tensor = torch.nn.functional.relu(self.hidden_layer(embedding_tensor))
+    output_tensor = self.output_layer(hidden_tensor)
+    print(output_tensor.shape)
     # TODO: complete for part 3
-    return torch.zeros(inputs.shape(0), 91)  # replace this line
+    #return torch.zeros(inputs.shape(0), 91)  # replace this line
+    return output_tensor
 
 
 def train(model, loader): 
 
-  loss_function = NLLoss(reduction='mean')
+  loss_function = NLLLoss(reduction='mean')
 
   LEARNING_RATE = 0.01 
   optimizer = torch.optim.Adagrad(params=model.parameters(), lr=LEARNING_RATE)

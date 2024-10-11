@@ -153,7 +153,6 @@ class FeatureExtractor(object):
                 # Else, get the word at the index from the sequence
                 else:
                     word = words[input_rep[i]]
-                    '''?? Not entirely sure if I took care of 'None' correctly ?? '''
                     # If the word is NOT None, make it lowercase
                     if word is not None:
                         word.lower()
