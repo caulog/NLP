@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import torch
+from networkx.classes.filters import hide_edges
 
 from torch.nn import Module, Linear, Embedding, NLLLoss
 from torch.nn.functional import relu, log_softmax
@@ -31,21 +32,30 @@ class DependencyModel(Module):
   def __init__(self, word_types, outputs):
     super(DependencyModel, self).__init__()
     # TODO: complete for part 3
-    # Embedding layer with
-    # num_embeddings = number of word_types: size of the dictionary of embeddings
-    # embedding_dim = 128: size of each embedding vector
-    #print(word_types)
     self.embedding_layer = torch.nn.Embedding(word_types, 128)
-    self.hidden_layer = torch.nn.Linear(128, 128)
+    self.hidden_layer = torch.nn.Linear(768, 128)
     self.output_layer = torch.nn.Linear(128, 91)
 
   def forward(self, inputs):
-    embedding_tensor= self.embedding_layer(inputs).view(len(inputs), 786)
-    hidden_tensor = torch.nn.functional.relu(self.hidden_layer(embedding_tensor))
-    output_tensor = self.output_layer(hidden_tensor)
-    print(output_tensor.shape)
     # TODO: complete for part 3
-    #return torch.zeros(inputs.shape(0), 91)  # replace this line
+    # embedding_tensor= self.embedding_layer(inputs).view(len(inputs), 786)
+    # shape '[16, 786]' is invalid for input of size 12288
+    #print(torch.zeros(inputs.shape(0), 91))
+
+    embedding_tensor = self.embedding_layer(inputs)
+    #print(embedding_tensor.shape) --> [16, 6, 128]
+    embedding_flattened = embedding_tensor.view(embedding_tensor.size(0), -1)
+    #print(embedding_flattened.shape) --> [16, 768]
+
+    hidden_tensor = self.hidden_layer(embedding_flattened)
+    # print(hidden_tensor.shape) --> [16, 128]
+    hidden_relu = torch.nn.functional.relu(hidden_tensor)
+    # print(hidden_relu.shape) --> [16, 128]
+
+    output_tensor = self.output_layer(hidden_relu)
+    # print(output_tensor.shape) --> [16, 91]
+
+    #print(torch.zeros(inputs.shape(0), 91)) # replace this line
     return output_tensor
 
 
