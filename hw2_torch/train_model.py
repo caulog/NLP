@@ -54,6 +54,8 @@ class DependencyModel(Module):
 
     output_tensor = self.output_layer(hidden_relu)
     # print(output_tensor.shape) --> [16, 91]
+    '''ERROR HERE ??'''
+    #output_CEL = torch.nn.CrossEntropyLoss(output_tensor)
 
     #print(torch.zeros(inputs.shape(0), 91)) # replace this line
     return output_tensor
@@ -61,7 +63,8 @@ class DependencyModel(Module):
 
 def train(model, loader): 
 
-  loss_function = NLLLoss(reduction='mean')
+  #loss_function = NLLLoss(reduction='mean')
+  loss_function = torch.nn.CrossEntropyLoss(reduction='mean')
 
   LEARNING_RATE = 0.01 
   optimizer = torch.optim.Adagrad(params=model.parameters(), lr=LEARNING_RATE)
@@ -81,6 +84,8 @@ def train(model, loader):
  
     predictions = model(torch.LongTensor(inputs))
 
+    #print(predictions.shape)
+    #print(targets.shape)
     loss = loss_function(predictions, targets)
     tr_loss += loss.item()
 
@@ -93,7 +98,10 @@ def train(model, loader):
       print(f"Current average loss: {curr_avg_loss}")
 
     # To compute training accuracy for this epoch 
-    correct += sum(torch.argmax(logits, dim=1) == torch.argmax(targets, dim=1))
+    #correct += sum(torch.argmax(logits, dim=1) == torch.argmax(targets, dim=1))
+
+    # was told to switch this to CEL and then in turn "logits" didnt exist
+    correct += sum(torch.argmax(predictions, dim=1) == torch.argmax(targets, dim=1))
     total += len(inputs)
       
     # Run the backward pass to update parameters 
