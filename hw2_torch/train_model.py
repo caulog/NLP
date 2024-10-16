@@ -95,7 +95,7 @@ def train(model, loader):
     
     if idx % 1000==0:
       curr_avg_loss = tr_loss / tr_steps
-      print(f"Current average loss: {curr_avg_loss}")
+      #print(f"Current average loss: {curr_avg_loss}")
 
     # To compute training accuracy for this epoch 
     #correct += sum(torch.argmax(logits, dim=1) == torch.argmax(targets, dim=1))
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     print("Done loading data")
 
     # Now train the model
-    for i in range(5): 
+    for i in range(8):
       train(model, loader)
 
 
