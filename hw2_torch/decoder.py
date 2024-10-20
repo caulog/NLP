@@ -29,47 +29,64 @@ class Parser(object):
         state = State(range(1,len(words)))
         state.stack.append(0)
 
-        # Ideal: only select  highest scoring transition and update the state accordingly --> select the highest scoring permitted transition
-        # Unfortunately, possible that highest scoring transition is not possible.
-        # arc-left or arc-right are not permitted the stack is empty.
-        # Shifting the only word out of the buffer is also illegal, unless the stack is empty.
-        # Finally, the root node must never be the target of a left-arc
         # TODO: Write the body of this loop for part 5
-
         # As long as the buffer is not empty
         while state.buffer:
             # Use feature extractor to obtain current state
             # State is numpy array and needs to be a tensor reshaped w correct dimensions for model
-            curr_state = torch.tensor(self.extractor.get_input_representation(words, pos, state)).reshape(1,-1)
+            '''curr_state = torch.tensor(self.extractor.get_input_representation(words, pos, state)).reshape(1,-1)'''
             # model(features) and retrieve a softmax actived vector of possible actions
-            actions = self.model(curr_state)
+            '''actions = self.model(curr_state)'''
             # Create a list of possible actions and sort it according to their output probability
-            actions_array = actions.detach().numpy()
-            probable_actions = np.sort(actions_array)
+            ''''actions_array = actions.detach().numpy()'''
+            '''probable_actions = np.sort(actions_array)'''
 
-            next_transition = False
+            curr_state = self.extractor.get_input_representation(words, pos, state)
+            curr_state_tensor = torch.tensor(curr_state).reshape(1, -1)
+            transitions = self.model(curr_state_tensor)
+            #print(curr_state_tensor)
+            #print(transitions)
+
+
+            find_transition = True
             i = 0
-            while not next_transition:
-                # to make sure out of bounds doesn't occur
+            while find_transition:
+                ''' to make sure out of bounds doesn't occur
                 #try:
                 #    try_transition = probable_actions[0][i]
                 #except IndexError as e:
                 #    break
                 #else:
                 #    transition = self.output_labels[i]
-                #    print(i, "\t", transition)
+                #    print(i, "\t", transition) '''
 
+                # testing
                 transition = self.output_labels[i]
-                print(i, "\t", transition)
+
+
+                # Get transition type and label
+                type = transition[0]
+                label = transition[1]
+                # Shifting the only word out of the buffer is also illegal, unless the stack is empty.
+                if(type == "shift") and (len(state.buffer) > 1 or (len(state.buffer) == 1 and len(state.stack) == 0)):
+                    find_transition = False
+                # arc-left or arc-right are not permitted the stack is empty.
+                # the root node must never be the target of a left-arc
+                '''(state.stack[-1] != 'root') is WRONG'''
+                if(type == "left_arc") and (len(state.stack) > 0) and (state.stack[-1] != 'root'):
+                    find_transition = False
+                if(type == "right_arc") and (len(state.stack) > 0):
+                    find_transition = False
 
                 i = i + 1
-                #print(transition)
 
-            # (make sure the largest probability comes first in the list)
-          #pass # replace
-
-
-  
+                # do transition
+                if type == "shift":
+                    state.shift()
+                if type == "left_arc":
+                    state.left_arc(label)
+                if type == "right_arc":
+                    state.right_arc(label)
 
         result = DependencyStructure()
         for p,c,r in state.deps:
