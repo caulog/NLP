@@ -23,12 +23,50 @@ class Parser(object):
 
     def parse_sentence(self, words, pos):
 
+        # Creates state instance: 0 words on the stack
+        # Buffer contains all input words (indices)
+        # Deps structure is empty
         state = State(range(1,len(words)))
         state.stack.append(0)
 
+        # Ideal: only select  highest scoring transition and update the state accordingly --> select the highest scoring permitted transition
+        # Unfortunately, possible that highest scoring transition is not possible.
+        # arc-left or arc-right are not permitted the stack is empty.
+        # Shifting the only word out of the buffer is also illegal, unless the stack is empty.
+        # Finally, the root node must never be the target of a left-arc
         # TODO: Write the body of this loop for part 5
+
+        # As long as the buffer is not empty
         while state.buffer:
-          pass # replace
+            # Use feature extractor to obtain current state
+            # State is numpy array and needs to be a tensor reshaped w correct dimensions for model
+            curr_state = torch.tensor(self.extractor.get_input_representation(words, pos, state)).reshape(1,-1)
+            # model(features) and retrieve a softmax actived vector of possible actions
+            actions = self.model(curr_state)
+            # Create a list of possible actions and sort it according to their output probability
+            actions_array = actions.detach().numpy()
+            probable_actions = np.sort(actions_array)
+
+            next_transition = False
+            i = 0
+            while not next_transition:
+                # to make sure out of bounds doesn't occur
+                #try:
+                #    try_transition = probable_actions[0][i]
+                #except IndexError as e:
+                #    break
+                #else:
+                #    transition = self.output_labels[i]
+                #    print(i, "\t", transition)
+
+                transition = self.output_labels[i]
+                print(i, "\t", transition)
+
+                i = i + 1
+                #print(transition)
+
+            # (make sure the largest probability comes first in the list)
+          #pass # replace
 
 
   
