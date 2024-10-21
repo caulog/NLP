@@ -31,42 +31,51 @@ class Parser(object):
 
         # As long as the buffer is not empty
         while state.buffer:
-            # Use feature extractor to obtain current state
-            # State is numpy array and needs to be a tensor reshaped w correct dimensions for model
-            curr_state = torch.tensor(self.extractor.get_input_representation(words, pos, state)).reshape(1,-1)
-            # model(features) to retrieve a softmax actived vector of possible actions
-            actions = self.model(curr_state)
-            softmax_actions = torch.softmax(actions, dim=-1)
-            # Create a list of possible actions and sort it according to their output probability
-            softmax_actions_array = softmax_actions[0].detach().numpy()
-            probable_indexes = np.argsort(softmax_actions_array)[::-1][:20]
 
-            find_transition = True
+            # Use feature extractor to obtain current state and make it a tensor w correct model dimensions
+            curr_state = torch.tensor(self.extractor.get_input_representation(words, pos, state)).reshape(1,-1)
+
+            # Retrieve possible actions
+            actions = self.model(curr_state)
+
+            # Convert raw logit values to probabilities
+            softmax_actions = torch.softmax(actions, dim=-1)
+
+            # Sort list of possible actions according to output prob
+            softmax_actions_array = softmax_actions[0].detach().numpy()
+            probable_indexes = np.argsort(softmax_actions_array)[::-1]
+
             i = 0
+            name, label = "", ""
+            find_transition = True
             while find_transition:
-                # get the index of the most probable action
-                '''try_transition = probable_indexes[0][i]'''
+
+                # Get the index of most probable action
                 try_transition = probable_indexes[i]
-                # get the output label of that transition
+
+                # Get output label of transition to try
                 transition = self.output_labels[try_transition]
 
-                # Get transition type and label
+                # Get transition name and label
                 name = transition[0]
                 label = transition[1]
 
-                # Shifting the only word out of the buffer is also illegal, unless the stack is empty.
-                # arc-left or arc-right are not permitted the stack is empty.
-                # the root node must never be the target of a left-arc
+                # No shift if buffer size is 1, unless the stack is empty.
                 if(name == "shift") and (len(state.buffer) > 1 or (len(state.buffer) == 1 and len(state.stack) == 0)):
                     find_transition = False
+
+                # No arc-left if stack is empty and root node is target.
                 if(name == "left_arc") and (len(state.stack) > 0) and (state.stack[-1] != 0):
                     find_transition = False
+
+                # No arc-right if stack is empty.
                 if(name == "right_arc") and (len(state.stack) > 0):
                     find_transition = False
 
+                # Next transition if none found
                 i = i + 1
 
-            # do transition
+            # Do found transition
             if name == "shift":
                 state.shift()
             if name == "left_arc":
